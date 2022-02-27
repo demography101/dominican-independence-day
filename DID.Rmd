@@ -1,0 +1,239 @@
+---
+title: "Dominican Independence Day"
+output: html_document
+---
+
+```{r setup}
+
+install.packages("viridis") # color palletes
+install.packages("viridisLite")
+install.packages("RColorBrewer")
+install.packages("tidyverse")
+install.packages("tidyr")
+library(ggplot2)
+library("tidycensus")
+library("viridis")  
+library("viridisLite")
+library("RColorBrewer")
+library("tidyverse")
+library(dplyr)
+library(ggrepel)
+library(ggimage)
+library(RCurl)
+library(tidyr)
+
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r Dominican Flag}
+
+library(ggplot2)
+library(png)
+
+drpng <- readPNG('~/Downloads/DR center.svg.png')
+
+drflag =data.frame(x1=c(1,4,1,4), x2=c(3,6,3,6),
+             y1=c(1,1,3,3), y2=c(2,2,4,4), r=c(1,2,3,4),
+             cols = c('red3','navyblue', 'navyblue','red3'))
+
+ggplot() + 
+     scale_x_continuous(name="x") + 
+     scale_y_continuous(name="y") +
+     geom_rect(data= drflag, mapping=aes(xmin=x1, xmax=x2, ymin=y1, ymax=y2), 
+               fill = drflag$cols) +
+     annotation_raster(drpng, ymin = 2, ymax = 3, xmin = 3, xmax = 4) +
+     theme_void()
+
+```
+
+
+```{r Map of Dominican Republic}
+
+install.packages("choroplethr")
+install.packages("choroplethrAdmin1")
+install.packages("choroplethrMaps")
+library(choroplethr)
+library(choroplethrAdmin1)
+library(sp)
+library(choroplethrMaps)
+
+
+data(admin1.map)
+drreg <- admin1.map %>% 
+             filter(admin == "dominican republic") %>%
+             select(admin,region,long,lat) # get region names and location
+
+
+# Population by Province
+drpop <- drreg %>% group_by(region) %>%
+                 mutate(Pop = case_when(region == "distrito nacional" ~ 1043186,
+                                        region == "provincia de azua" ~ 222256,
+                                        region == "provincia de baoruco" ~ 101005,
+                                        region == "provincia de barahona" ~ 189177,
+                                        region == "provincia de dajabon" ~ 66467,
+                                        region == "provincia de el seibo" ~ 93508,
+                                        region == "provincia de elias pina"~ 63402,
+                                        region == "provincia de hato mayor" ~ 85762,
+                                        region =="provincia de hermanas mirabal" ~ 92148,
+                                        region =="provincia de independencia" ~ 58424,
+                                        region =="provincia de la altagracia"~353406,
+                                        region =="provincia de la romana"~272597,
+                                        region =="provincia de la vega"~411290,
+                                        region =="provincia de monsenor nouel"~174278,
+                                        region =="provincia de monte cristi"~117221,
+                                        region =="provincia de monte plata"~191033,
+                                        region =="provincia de pedernales"~34997,
+                                        region =="provincia de peravia"~197434,
+                                        region =="provincia de puerto plata"~333221,
+                                        region =="provincia de samana"~112160,
+                                        region =="provincia de san cristobal"~637429,
+                                        region =="provincia de san jose de ocoa"~54405,
+                                        region =="provincia de san juan"~221736,
+                                    region =="provincia de san pedro de macoris" ~304966,
+                                        region =="provincia de santiago" ~1045169,
+                                        region =="provincia de santiago rodriguez"~57266,
+                                        region =="provincia de santo domingo"~2906003,
+                                        region =="provincia de valverde"~176720,
+                                        region =="provincia duarte"~298913,
+                                        region =="provincia espaillat"~239845,
+                                      region =="provincia maria trinidad sanchez"~141097,
+                                        region =="provincia sanchez ramirez"~151978))
+
+ggplot(drpop, aes(long, lat)) + 
+   geom_polygon(aes(fill = Pop, group=region), colour = "black", size = 0.1) +
+   scale_fill_gradient(low = "white", high = "navy", 
+                       breaks = c(0,500000,1000000,1500000,2000000,2500000,3000000),
+                       limits = c(0,3030000),
+                       labels = c('0','500,000','1,000,000','1,500,000',
+                                  '2,000,000','2,500,000','3,000,000')) +
+   theme_void() +
+   theme(legend.key.size = unit(1, 'cm'), 
+        legend.key.height = unit(1, 'cm'), 
+        legend.title = element_text(size=12), 
+        legend.text = element_text(size=10)) +
+   labs(title = "Población por Provincia - Population by Province (2020)",
+        caption = "Source: Proyecciones y estimaciones provinciales 2000-2030,
+        Oficina Nacional de Estadística (ONE)",
+        fill = "Población/Population")
+
+
+# Area (km2) of Provinces
+drarea <- drreg %>% group_by(region) %>%
+                 mutate(Areakm2 = case_when(region == "distrito nacional" ~ 104.44,
+                                        region == "provincia de azua" ~ 2531.77,
+                                        region == "provincia de baoruco" ~ 1282.23,
+                                        region == "provincia de barahona" ~ 1739.38,
+                                        region == "provincia de dajabon" ~ 1020.73,
+                                        region == "provincia de el seibo" ~ 1786.8,
+                                        region == "provincia de elias pina"~ 1426.2,
+                                        region == "provincia de hato mayor" ~ 1329.29,
+                                      region =="provincia de hermanas mirabal" ~ 440.43,
+                                        region =="provincia de independencia" ~ 2006.44,
+                                        region =="provincia de la altagracia"~3010.34,
+                                        region =="provincia de la romana"~653.95,
+                                        region =="provincia de la vega"~2287.24,
+                                        region =="provincia de monsenor nouel"~992.39,
+                                        region =="provincia de monte cristi"~1924.35,
+                                        region =="provincia de monte plata"~2632.14,
+                                        region =="provincia de pedernales"~2074.53,
+                                        region =="provincia de peravia"~792.33,
+                                        region =="provincia de puerto plata"~1852.9,
+                                        region =="provincia de samana"~853.74,
+                                        region =="provincia de san cristobal"~1265.77,
+                                        region =="provincia de san jose de ocoa"~855.4,
+                                        region =="provincia de san juan"~3569.39,
+                                  region =="provincia de san pedro de macoris" ~1255.46,
+                                        region =="provincia de santiago" ~2836.51,
+                                     region =="provincia de santiago rodriguez"~1111.14,
+                                        region =="provincia de santo domingo"~1301.84,
+                                        region =="provincia de valverde"~823.38,
+                                        region =="provincia duarte"~1605.35,
+                                        region =="provincia espaillat"~838.62,
+                                    region =="provincia maria trinidad sanchez"~1271.71,
+                                        region =="provincia sanchez ramirez"~1196.13))
+
+ggplot(drarea, aes(long, lat)) + 
+   geom_polygon(aes(fill = Areakm2, group=region), colour = "black", size = 0.2) +
+   scale_fill_gradient(low = "moccasin", high = "darkgreen", 
+                       breaks = c(0,700,1400,2100,2800,3500),
+                       limits = c(104,3570),
+                       labels = c('0','700','1,400','2,100','2,800','3,500')) +
+   theme_void() +
+   theme(legend.key.size = unit(1, 'cm'), 
+        legend.key.height = unit(1, 'cm'), 
+        legend.title = element_text(size=12), 
+        legend.text = element_text(size=10)) +
+   labs(title = "Tamaño de las Provincias - Size of the Provinces",
+        caption = "Source: dominicnaa.gob.do",
+        fill = "Tamaño/Area (km2)")
+
+```
+
+
+
+
+```{r Dominican Population Pyramid}
+
+install.packages("wpp2019")
+library(wpp2019)
+
+data(popF)
+data(popM)
+
+popf <- popF %>%
+        gather(Year, popF, '2020') %>%
+        filter(country_code %in% c(214)) %>%
+        select(name, popF, age, Year) 
+
+popf <- popf %>%
+             add_column(Gender = "Women") # Add new column
+names(popf)[2] <- 'Pop' # Rename column
+
+
+popm <- popM %>%
+        gather(Year, popM, '2020') %>%
+        filter(country_code %in% c(214)) %>%
+        select(name,popM,age,Year)
+
+popm <- popm %>% 
+             add_column(Gender = "Men")
+names(popm)[2] <- 'Pop' 
+
+
+pop <- rbind(popf,popm)
+selected_year = 2020
+pop <- pop %>% filter(Year == (selected_year)) %>%
+               mutate(Pop = ifelse(Gender=='Women',1,-1)*Pop,
+                      AgeGroup = factor(age, levels=unique(age)))
+
+ggplot() +
+  aes(x = AgeGroup, y = Pop, fill = Gender) + 
+  geom_bar(data = filter(pop, Gender == "Women"), stat='identity') + 
+  geom_bar(data = filter(pop, Gender == "Men"), stat='identity') +
+  scale_y_continuous(breaks=seq(-500, 500, 100),
+                     labels =c('500 K','400 K','300 K','200 K','100 K','0',
+                               '100 K','200 K','300 K','400 K', '500 K'),
+                     limits = c(-512, 512)) +
+  xlab("Grupo de Edad/Age Group") + ylab("Población/Population") + coord_flip() +
+  labs(fill = "Genero/Gender",
+       title=paste(selected_year,'Población en la República Dominicana'),
+       subtitle=paste(selected_year,'Population in Dominican Republic'),
+       caption = "Source: UN Population Division") +
+  scale_fill_manual(values=c('navyblue','red3'),
+                    labels = c("Hombres/Men", "Mujeres/Women")) +
+  theme(plot.background = element_rect(fill = "white", color = NA),
+        panel.background = element_rect(fill = "white"),
+        axis.text = element_text(color = "black"),
+        axis.title = element_text(color = "black", size = 12),
+        plot.title = element_text(color = "black"),
+      # plot.margin = unit(c(2,1.5,1,1), "cm"),
+         panel.grid = element_line(color = "lightgray"))
+
+
+```
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
